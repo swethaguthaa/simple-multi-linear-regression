@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiple Linear Regression — Live Demo</title>
+  <meta name="description" content="Predict startup profit from R&D, administration, and marketing spend with a linear regression model, live in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#e7e6e3; --paper:#fff; --ink:#1a1a1a; --ink-soft:#5c5c5a;
+      --line:#cdccc8; --serif:"Fraunces",Georgia,serif; --sans:"Inter",-apple-system,sans-serif;
+      --ease:cubic-bezier(.4,0,.1,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;
+      min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1.25rem}
+    a{color:inherit}
+    .wrap{width:100%;max-width:720px}
+    .eyebrow{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.9rem}
+    h1{font-family:var(--serif);font-weight:400;font-size:clamp(2rem,6vw,3rem);letter-spacing:-.02em;line-height:1.05}
+    .lead{color:var(--ink-soft);margin-top:1rem;max-width:46rem}
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2rem;margin-top:2rem}
+    .control{margin-bottom:1.7rem}
+    .control-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.6rem}
+    .control-head label{font-weight:500}
+    .control-head .val{font-family:var(--serif);font-size:1.15rem}
+    input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--line);outline:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--ink);cursor:pointer;transition:transform .2s var(--ease)}
+    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+    input[type=range]::-moz-range-thumb{width:20px;height:20px;border:none;border-radius:50%;background:var(--ink);cursor:pointer}
+    .result{margin-top:1.5rem;padding-top:1.7rem;border-top:1px solid var(--line);text-align:center}
+    .result .k{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+    .profit{font-family:var(--serif);font-weight:300;font-size:clamp(2.6rem,11vw,4.2rem);line-height:1.05;letter-spacing:-.02em;margin-top:.3rem}
+    .meta{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center}
+    .meta span{font-size:.72rem;letter-spacing:.04em;padding:.3rem .8rem;border:1px solid var(--line);border-radius:100px;color:var(--ink-soft)}
+    .note{margin-top:1.5rem;font-size:.85rem;color:var(--ink-soft);text-align:center}
+    footer{margin-top:2.5rem;display:flex;gap:1.4rem;font-size:.88rem;color:var(--ink-soft)}
+    footer a{border-bottom:1px solid var(--line);padding-bottom:2px;transition:color .2s var(--ease)}
+    footer a:hover{color:var(--ink)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Interactive Demo · Runs in your browser</p>
+    <h1>Multiple Linear Regression</h1>
+    <p class="lead">
+      Predicts a startup's profit from three spending categories. The fitted linear model
+      runs entirely client-side using the coefficients learned by scikit-learn.
+    </p>
+
+    <div class="card">
+      <div class="control">
+        <div class="control-head"><label for="rd">R&amp;D spend</label><span class="val" id="rdVal">$85,000</span></div>
+        <input type="range" id="rd" min="5000" max="180000" step="1000" value="85000" />
+      </div>
+      <div class="control">
+        <div class="control-head"><label for="mkt">Marketing spend</label><span class="val" id="mktVal">$70,000</span></div>
+        <input type="range" id="mkt" min="5000" max="160000" step="1000" value="70000" />
+      </div>
+      <div class="control">
+        <div class="control-head"><label for="admin">Administration</label><span class="val" id="adminVal">$55,000</span></div>
+        <input type="range" id="admin" min="12000" max="120000" step="1000" value="55000" />
+      </div>
+
+      <div class="result">
+        <div class="k">Predicted profit</div>
+        <div class="profit" id="profit">$0</div>
+      </div>
+
+      <div class="meta">
+        <span>Linear Regression</span>
+        <span>R² 0.836</span>
+        <span>MAE ≈ $10,352</span>
+      </div>
+    </div>
+    <p class="note">R&amp;D spend has the largest coefficient (~0.76), so it moves profit the most.</p>
+
+    <footer>
+      <a href="https://github.com/swethaguthaa/simple-multi-linear-regression" target="_blank" rel="noopener">View source on GitHub</a>
+    </footer>
+  </div>
+
+  <script>
+    // Coefficients from the trained scikit-learn LinearRegression
+    // order: [rd_spend, administration, marketing_spend]
+    const COEF = [0.76384, 0.00348, 0.25488];
+    const INTERCEPT = 22130.39;
+
+    const rd = document.getElementById("rd");
+    const mkt = document.getElementById("mkt");
+    const admin = document.getElementById("admin");
+    const rdVal = document.getElementById("rdVal");
+    const mktVal = document.getElementById("mktVal");
+    const adminVal = document.getElementById("adminVal");
+    const profitEl = document.getElementById("profit");
+    const money = n => "$" + Math.round(n).toLocaleString("en-US");
+
+    function update(){
+      const r = +rd.value, m = +mkt.value, a = +admin.value;
+      rdVal.textContent = money(r);
+      mktVal.textContent = money(m);
+      adminVal.textContent = money(a);
+      const profit = INTERCEPT + COEF[0]*r + COEF[1]*a + COEF[2]*m;
+      profitEl.textContent = money(profit);
+    }
+    [rd,mkt,admin].forEach(el => el.addEventListener("input", update));
+    update();
+  </script>
+</body>
+</html>
